@@ -9,7 +9,6 @@ from typing import Optional
 from backend.still_here.core import repository
 from backend.still_here.core.domain.model import Device
 from backend.still_here.core.repository import AbstractDeviceRepository
-from backend.still_here.core.repository import InMemoryDeviceRepository
 from backend.still_here.foundation.service.unit_of_work import AbstractUnitOfWork
 
 
@@ -49,7 +48,7 @@ class AbstractDeviceUnitOfWork(AbstractUnitOfWork):
 class InMemoryDeviceUnitOfWork(AbstractDeviceUnitOfWork):
     """Concrete Unit of Work for in-memory device repository."""
 
-    def __init__(self, repository: AbstractDeviceRepository = InMemoryDeviceRepository()):
+    def __init__(self, repository: AbstractDeviceRepository):
         """Unit of work initialization with sessionmaker.
 
         Args:

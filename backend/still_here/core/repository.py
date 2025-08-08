@@ -52,9 +52,17 @@ class AbstractDeviceRepository(abc.ABC):
             self.seen.update(devices_map.values())
         return devices_map
 
-    def get_by_fire_at(self, fire_at: int) -> list[Device]:
-        """Retrieve all devices scheduled to fire at a specific timestamp (second)."""
-        devices = self._get_by_fire_at(fire_at)
+    def get_fire_at_between(self, start: int, end: int) -> list[Device]:
+        """Return all devices scheduled to fire between the given timestamps (inclusive).
+
+        Args:
+            start (int): Start of the interval (included), as a UNIX timestamp in seconds (UTC).
+            end (int): End of the interval (included), as a UNIX timestamp in seconds (UTC).
+
+        Returns:
+            list[Device]: List of devices scheduled to fire within the given interval.
+        """
+        devices = self._get_fire_at_between(start, end)
         if devices:
             # track seen element
             self.seen.update(devices)
@@ -116,7 +124,7 @@ class AbstractDeviceRepository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
-    def _get_by_fire_at(self, fire_at: int) -> list[model.Device]:
+    def _get_fire_at_between(self, start: int, end: int) -> list[model.Device]:
         raise NotImplementedError
 
     @abc.abstractmethod
@@ -159,9 +167,16 @@ class InMemoryDeviceRepository(AbstractDeviceRepository):
         """Retrieve all devices."""
         return self.by_uuid
 
-    def _get_by_fire_at(self, fire_at: int) -> list[Device]:
-        """Retrieve all devices scheduled to fire at a specific timestamp (second)."""
-        return [device for uuid in self.by_fire_at.get(fire_at, set()) if (device := self._get(uuid)) is not None]
+    def _get_fire_at_between(self, start: int, end: int) -> list[Device]:
+        """Return devices scheduled in [start, end] inclusive."""
+        devices = []
+        for ts in range(start, end + 1):  # it's inclusive
+            for uuid in self.by_fire_at.get(ts, set()):
+                device = self._get(uuid)
+                if device:
+                    devices.append(device)
+            self.by_fire_at.pop(ts, None)
+        return devices
 
     def _update(self, uuid: str, **fields) -> None:
         """Update a device's attributes and re-index if necessary."""

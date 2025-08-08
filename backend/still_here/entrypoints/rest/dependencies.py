@@ -12,6 +12,7 @@ from fastapi.openapi.models import OAuthFlows as OAuthFlowsModel
 from fastapi.security import OAuth2
 
 from backend.still_here import bootstrap
+from backend.still_here.bootstrap import get_device_repository
 from backend.still_here.core.service import unit_of_work
 from backend.still_here.foundation.exceptions import AuthenticationError
 from backend.still_here.messagebus import MessageBus
@@ -46,7 +47,7 @@ def get_bus(request: Request) -> MessageBus:
     if bus is None:
         request.app.thread_bus_map[thread_id] = bootstrap.bootstrap(
             start_orm=False,
-            uow=unit_of_work.InMemoryDeviceUnitOfWork(),
+            uow=unit_of_work.InMemoryDeviceUnitOfWork(get_device_repository()),
         )
         bus = thread_bus_map.get(thread_id, None)
     return bus

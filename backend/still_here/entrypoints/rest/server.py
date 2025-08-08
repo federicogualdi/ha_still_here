@@ -17,6 +17,7 @@ from backend.still_here.foundation.exceptions import InvalidArgumentError
 from backend.still_here.foundation.exceptions import NotDeletableError
 from backend.still_here.foundation.exceptions import NotFoundError
 from backend.still_here.foundation.exceptions import NotUpdatableError
+from backend.still_here.scheduler import task
 from backend.still_here.settings import get_logger
 from backend.still_here.settings import init_auth_provider
 from backend.still_here.settings import settings
@@ -44,6 +45,9 @@ app.include_router(base_router)
 app.thread_bus_map = {}
 # register auth_provider
 app.auth_provider = auth_provider
+
+# start task to fire the LWT
+task.start()
 
 
 # error handling

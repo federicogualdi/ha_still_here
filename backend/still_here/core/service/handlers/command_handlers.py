@@ -3,13 +3,12 @@
 receive commands and perform the required action
 """
 
-from datetime import datetime
+import time
 
 from backend.still_here.core.domain import commands
 from backend.still_here.core.domain import model
 from backend.still_here.core.service import unit_of_work
 from backend.still_here.foundation.exceptions import NotFoundError
-from backend.still_here.foundation.utils import get_utc_tz_aware_datetime
 from backend.still_here.settings import get_logger
 
 logger = get_logger()
@@ -31,7 +30,7 @@ def register_device(
             name=cmd.name,
             last_will=cmd.last_will,
             ttl=cmd.ttl,
-            created_at=get_utc_tz_aware_datetime(datetime.now()),
+            created_at=int(time.time()),
         )
         # save data
         uow.devices.add(device)
@@ -78,7 +77,8 @@ def keep_alive_device(
         if not device:
             raise NotFoundError(f"device {cmd.uuid} not found")
 
-        params = {"fire_at": int(get_utc_tz_aware_datetime(datetime.now()).timestamp()) + device.ttl}
+        now_sec = int(time.time())
+        params = {"fire_at": now_sec + device.ttl}
         uow.devices.update(device.uuid, **params)
         device.generate_event_keep_alive_device()
         # commit

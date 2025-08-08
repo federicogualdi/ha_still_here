@@ -12,8 +12,6 @@ entity: domain object whose attributes may change,
 but with a recognizable identity over time.
 """
 
-from datetime import datetime
-
 from backend.still_here.core.domain import events
 from backend.still_here.foundation.domain.events import Event
 from backend.still_here.settings import get_logger
@@ -30,7 +28,7 @@ class Device:
         name: str,
         last_will: str,
         ttl: int,
-        created_at: datetime,
+        created_at: int,
         consumer_id: str | None = None,
         consumed: bool = False,
         version_number: int = 0,
@@ -41,7 +39,7 @@ class Device:
         self.last_will = last_will
         self.ttl = ttl
         self.created_at = created_at
-        self.fire_at = int(created_at.timestamp()) + self.ttl
+        self.fire_at = created_at + self.ttl
         self.consumer_id = consumer_id
         self.consumed = consumed
         # tracks generated events related to this aggregate
