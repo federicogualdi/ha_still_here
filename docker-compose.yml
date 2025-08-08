@@ -1,0 +1,25 @@
+networks:
+  app: # main network
+
+services:
+
+  rest_server:
+    container_name: still-here-backend-rest-server
+    build:
+      context: .
+      dockerfile: ${DOCKERFILE}
+    image: still-here-backend-${DOCKER_IMAGE_SUFFIX}
+    environment:
+      - DEBUG=${DEBUG}
+      - LOG_LEVEL=${LOG_LEVEL}
+      - ENABLE_AUTH=${ENABLE_AUTH}
+      - WAIT_FOR_DEBUGGER=${REST_WAIT_FOR_DEBUGGER}
+    ports:
+      - ${REST_EXPOSED_SERVER_PORT}:8000
+      - ${REST_DEBUG_PORT:-5678}:5678
+    volumes:
+      - ./backend/still_here:/code/backend/still_here
+      # copy pyptoject.toml in the code folder to be able to provide coverage and other settings at runtime
+      - ./pyproject.toml:/code/pyproject.toml
+    networks:
+      - app

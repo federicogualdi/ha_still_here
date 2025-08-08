@@ -1,0 +1,63 @@
+##################### Stage 1: Builder stage ####################
+FROM python:3.13-slim-bookworm AS builder
+
+# Install apt required packages to compile psycopg2 (gcc, libpq-dev, python3-dev)
+# and to install poetry (curl)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends --no-install-suggests \
+        gcc  \
+        libpq-dev \
+        python3-dev \
+        curl \
+    && apt-get install -f -y --no-install-recommends && rm -rf /var/lib/apt/lists/*
+
+# Install pip
+RUN python3 -m pip install --no-cache-dir --upgrade pip
+
+# Install poetry
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+RUN curl -sSL https://install.python-poetry.org | python3 -
+# Export poetry path
+ENV PATH="/root/.local/bin:$PATH"
+# Disable virtualenv creation
+RUN poetry config virtualenvs.create false
+
+# Copy pyproject.toml and poetry.lock
+# hadolint ignore=DL3045
+COPY pyproject.toml ./pyproject.toml
+# hadolint ignore=DL3045
+COPY poetry.lock ./poetry.lock
+
+# Install any project specific Python packages
+# do not install current project package in editable mode (--no-root) is achieved by setting package-mode = false in pyproject
+RUN poetry install --with dev,debug
+
+##################################### Stage 2: Final Stage ########################
+FROM python:3.13-slim-bookworm
+
+# Ownership and identification
+LABEL maintainer="Federico Gualdi"
+
+# Install needed apt packages (libpq is for psycopg2)
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends \
+        libpq5 \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+# Copy python deps from builder stage
+COPY --from=builder /usr/local/lib/python3.13/site-packages /usr/local/lib/python3.13/site-packages
+COPY --from=builder /usr/local/bin /usr/local/bin
+COPY --from=builder /usr/local/include /usr/local/include
+
+# Copy project files
+RUN mkdir -p code/
+COPY backend /code/backend
+
+WORKDIR /code
+
+# Add current folder to pyhton sys.path
+ENV PYTHONPATH=.
+
+# Set entrypoint
+ENTRYPOINT [ "uvicorn", "backend.still_here.entrypoints.rest.server:app", "--host", "0.0.0.0", "--reload" ]
