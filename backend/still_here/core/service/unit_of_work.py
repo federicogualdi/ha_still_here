@@ -71,10 +71,11 @@ class InMemoryDeviceUnitOfWork(AbstractDeviceUnitOfWork):
 
     def _commit(self):
         """Commit work."""
+        self._backup.clear()
 
     def rollback(self):
         """Rollback work."""
-        if self._backup is None:
+        if not self._backup:
             return
 
         # Restore full state
